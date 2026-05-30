@@ -1,12 +1,11 @@
 import { RefreshCw } from 'lucide-react';
+import { EXPANSION_DISPLAY_ORDER } from '../logic/randomizer';
 import type { DominionCard } from '../types/cards';
 
 interface CardGridProps {
   cards: DominionCard[];
   onRerollCard: (cardName: string) => void;
 }
-
-const EXPANSION_DISPLAY_ORDER = ['Base', 'Intrigue', 'Prosperity', 'Seaside', 'Rising Sun', 'Renaissance'];
 
 export function CardGrid({ cards, onRerollCard }: CardGridProps) {
   const groupedCards = groupCardsByExpansion(cards);

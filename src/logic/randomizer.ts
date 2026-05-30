@@ -4,9 +4,17 @@ type RandomSource = () => number;
 
 const KINGDOM_SIZE = 10;
 const MAX_EVENTS = 2;
+export const EXPANSION_DISPLAY_ORDER: Expansion[] = [
+  'Base',
+  'Intrigue',
+  'Prosperity',
+  'Seaside',
+  'Rising Sun',
+  'Renaissance'
+];
 
 export function getAvailableExpansions(cards: DominionCard[]): Expansion[] {
-  return Array.from(new Set(cards.map((card) => card.set))).sort();
+  return Array.from(new Set(cards.map((card) => card.set))).sort(compareExpansions);
 }
 
 export function filterCardsByExpansions(cards: DominionCard[], expansions: Expansion[]): DominionCard[] {
@@ -168,4 +176,20 @@ function clamp(value: number, min: number, max: number): number {
 
 function normalizeSetupLabel(label: string): string {
   return label === 'Villager' ? 'Villagers' : label;
+}
+
+function compareExpansions(left: Expansion, right: Expansion): number {
+  const leftIndex = getExpansionSortIndex(left);
+  const rightIndex = getExpansionSortIndex(right);
+
+  if (leftIndex !== rightIndex) {
+    return leftIndex - rightIndex;
+  }
+
+  return left.localeCompare(right);
+}
+
+function getExpansionSortIndex(expansion: Expansion): number {
+  const index = EXPANSION_DISPLAY_ORDER.indexOf(expansion);
+  return index === -1 ? EXPANSION_DISPLAY_ORDER.length : index;
 }

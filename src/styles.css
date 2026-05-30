@@ -165,8 +165,8 @@ input {
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
 }
 
 .kingdom-groups {
@@ -190,18 +190,18 @@ input {
 
 .kingdom-card {
   display: grid;
-  min-height: 188px;
+  min-height: 142px;
   grid-template-rows: auto 1fr auto;
-  gap: 14px;
-  padding: 14px;
+  gap: 9px;
+  padding: 11px;
   border: 1px solid #dfd4c3;
   border-radius: 8px;
   background: linear-gradient(180deg, #ffffff 0%, #fbf8f1 100%);
 }
 
 .kingdom-card h4 {
-  margin: 5px 0 0;
-  font-size: 1.18rem;
+  margin: 3px 0 0;
+  font-size: 1.04rem;
   line-height: 1.12;
 }
 
@@ -209,12 +209,12 @@ input {
   display: flex;
   flex-wrap: wrap;
   align-content: start;
-  gap: 6px;
+  gap: 5px;
 }
 
 .type-list span {
-  min-height: 26px;
-  padding: 5px 8px;
+  min-height: 23px;
+  padding: 4px 7px;
   border-radius: 999px;
   color: #23302b;
   background: #e7eee6;
@@ -313,5 +313,9 @@ input {
   .expansion-grid,
   .card-grid {
     grid-template-columns: 1fr;
+  }
+
+  .kingdom-card {
+    min-height: 128px;
   }
 }
