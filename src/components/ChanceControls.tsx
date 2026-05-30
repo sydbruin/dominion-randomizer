@@ -1,15 +1,19 @@
 interface ChanceControlsProps {
   bigMoneyChance: number;
   eventChance: number;
+  projectChance: number;
   onBigMoneyChanceChange: (chance: number) => void;
   onEventChanceChange: (chance: number) => void;
+  onProjectChanceChange: (chance: number) => void;
 }
 
 export function ChanceControls({
   bigMoneyChance,
   eventChance,
+  projectChance,
   onBigMoneyChanceChange,
-  onEventChanceChange
+  onEventChanceChange,
+  onProjectChanceChange
 }: ChanceControlsProps) {
   return (
     <section className="panel controls-panel" aria-labelledby="chance-heading">
@@ -23,6 +27,7 @@ export function ChanceControls({
         onChange={onBigMoneyChanceChange}
       />
       <ChanceSlider id="events" label="Events" value={eventChance} onChange={onEventChanceChange} />
+      <ChanceSlider id="projects" label="Projects" value={projectChance} onChange={onProjectChanceChange} />
     </section>
   );
 }

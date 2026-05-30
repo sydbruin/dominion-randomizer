@@ -28,30 +28,48 @@ const cards: DominionCard[] = [
   { set: 'Base', edition: 'test', section: 'Event', name: 'Festival Day', coin_cost: 4, debt_cost: 0, types: ['Event'] },
   { set: 'Base', edition: 'test', section: 'Event', name: 'Market Day', coin_cost: 5, debt_cost: 0, types: ['Event'] },
   { set: 'Base', edition: 'test', section: 'Event', name: 'Trade Day', coin_cost: 6, debt_cost: 0, types: ['Event'] },
+  { set: 'Base', edition: 'test', section: 'Projects', name: 'City Gate', coin_cost: 3, debt_cost: null, types: ['Projects'] },
+  { set: 'Base', edition: 'test', section: 'Projects', name: 'Pageant', coin_cost: 3, debt_cost: null, types: ['Projects'] },
+  { set: 'Base', edition: 'test', section: 'Projects', name: 'Fair', coin_cost: 4, debt_cost: null, types: ['Projects'] },
   { set: 'Base', edition: 'test', section: 'Prophecy', name: 'Good Times', coin_cost: null, debt_cost: null, types: ['Prophecy'] }
 ];
 
 describe('randomizeKingdom', () => {
   it('draws 10 unique kingdom cards from selected expansions', () => {
-    const result = randomizeKingdom(cards, { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 0 }, () => 0);
+    const result = randomizeKingdom(
+      cards,
+      { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 0, projectChance: 0 },
+      () => 0
+    );
 
     expect(result.kingdomCards).toHaveLength(10);
     expect(new Set(result.kingdomCards.map((card) => card.name)).size).toBe(10);
     expect(result.events).toHaveLength(0);
+    expect(result.projects).toHaveLength(0);
     expect(result.useColonies).toBe(false);
   });
 
-  it('caps events at two and applies big money chance', () => {
-    const result = randomizeKingdom(cards, { selectedExpansions: ['Base'], bigMoneyChance: 100, eventChance: 100 }, () => 0);
+  it('caps events at two, projects at two, and events plus projects at three', () => {
+    const result = randomizeKingdom(
+      cards,
+      { selectedExpansions: ['Base'], bigMoneyChance: 100, eventChance: 100, projectChance: 100 },
+      () => 0
+    );
 
-    expect(result.events).toHaveLength(2);
+    expect(result.events.length).toBeLessThanOrEqual(2);
+    expect(result.projects.length).toBeLessThanOrEqual(2);
+    expect(result.events.length + result.projects.length).toBe(3);
     expect(result.useColonies).toBe(true);
     expect(result.setupRequirements).toContain('Use Platinum and Colony');
-    expect(result.setupRequirements).toContain('Use selected Event cards');
+    expect(result.setupRequirements).toContain('Use selected Project cards');
   });
 
   it('chooses a prophecy when an Omen card is selected', () => {
-    const result = randomizeKingdom(cards, { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 0 }, () => 0.99);
+    const result = randomizeKingdom(
+      cards,
+      { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 0, projectChance: 0 },
+      () => 0.99
+    );
 
     expect(result.kingdomCards.some((card) => card.types.includes('Omen'))).toBe(true);
     expect(result.prophecy?.name).toBe('Good Times');
@@ -59,11 +77,16 @@ describe('randomizeKingdom', () => {
   });
 
   it('rerolls one kingdom card without duplicating the existing kingdom', () => {
-    const result = randomizeKingdom(cards, { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 0 }, () => 0);
+    const result = randomizeKingdom(
+      cards,
+      { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 0, projectChance: 0 },
+      () => 0
+    );
     const rerolled = rerollKingdomCard(cards, result, result.kingdomCards[0].name, {
       selectedExpansions: ['Base'],
       bigMoneyChance: 0,
-      eventChance: 0
+      eventChance: 0,
+      projectChance: 0
     });
 
     expect(rerolled.kingdomCards).toHaveLength(10);

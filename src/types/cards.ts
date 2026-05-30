@@ -35,11 +35,13 @@ export interface RandomizerOptions {
   selectedExpansions: Expansion[];
   bigMoneyChance: number;
   eventChance: number;
+  projectChance: number;
 }
 
 export interface RandomizedKingdom {
   kingdomCards: DominionCard[];
   events: DominionCard[];
+  projects: DominionCard[];
   prophecy: DominionCard | null;
   useColonies: boolean;
   setupRequirements: string[];

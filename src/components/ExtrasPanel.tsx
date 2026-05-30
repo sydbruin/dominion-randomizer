@@ -16,8 +16,11 @@ export function ExtrasPanel({ result }: ExtrasPanelProps) {
         {result.events.map((event) => (
           <ExtraCard key={event.name} label="Event" card={event} />
         ))}
+        {result.projects.map((project) => (
+          <ExtraCard key={project.name} label="Project" card={project} />
+        ))}
         {result.prophecy && <ExtraCard label="Prophecy" card={result.prophecy} />}
-        {!result.useColonies && result.events.length === 0 && !result.prophecy && (
+        {!result.useColonies && result.events.length === 0 && result.projects.length === 0 && !result.prophecy && (
           <p className="muted">No additional cards selected.</p>
         )}
       </div>

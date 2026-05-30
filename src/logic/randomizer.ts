@@ -4,6 +4,8 @@ type RandomSource = () => number;
 
 const KINGDOM_SIZE = 10;
 const MAX_EVENTS = 2;
+const MAX_PROJECTS = 2;
+const MAX_EVENTS_AND_PROJECTS = 3;
 export const EXPANSION_DISPLAY_ORDER: Expansion[] = [
   'Base',
   'Intrigue',
@@ -35,16 +37,17 @@ export function randomizeKingdom(
   }
 
   const kingdomCards = drawUnique(kingdomPool, KINGDOM_SIZE, random);
-  const events = chooseEvents(eligibleCards, options.eventChance, random);
+  const { events, projects } = chooseEventsAndProjects(eligibleCards, options, random);
   const prophecy = chooseProphecyIfNeeded(eligibleCards, kingdomCards, random);
   const useColonies = rollPercent(options.bigMoneyChance, random);
 
   return {
     kingdomCards,
     events,
+    projects,
     prophecy,
     useColonies,
-    setupRequirements: determineSetupRequirements({ kingdomCards, events, prophecy, useColonies })
+    setupRequirements: determineSetupRequirements({ kingdomCards, events, projects, prophecy, useColonies })
   };
 }
 
@@ -78,6 +81,7 @@ export function rerollKingdomCard(
     setupRequirements: determineSetupRequirements({
       kingdomCards,
       events: current.events,
+      projects: current.projects,
       prophecy,
       useColonies: current.useColonies
     })
@@ -103,6 +107,10 @@ export function determineSetupRequirements(result: Omit<RandomizedKingdom, 'setu
     requirements.add('Use selected Event cards');
   }
 
+  if (result.projects.length > 0) {
+    requirements.add('Use selected Project cards');
+  }
+
   if (result.prophecy) {
     requirements.add(`Use Prophecy: ${result.prophecy.name}`);
     requirements.add('Use Sun tokens for Omens and Prophecy');
@@ -111,15 +119,39 @@ export function determineSetupRequirements(result: Omit<RandomizedKingdom, 'setu
   return Array.from(requirements).sort();
 }
 
-function chooseEvents(cards: DominionCard[], chance: number, random: RandomSource): DominionCard[] {
+function chooseEventsAndProjects(
+  cards: DominionCard[],
+  options: RandomizerOptions,
+  random: RandomSource
+): Pick<RandomizedKingdom, 'events' | 'projects'> {
   const eventPool = cards.filter((card) => card.section === 'Event');
-  const desiredCount = Array.from({ length: MAX_EVENTS }).filter(() => rollPercent(chance, random)).length;
+  const projectPool = cards.filter(isProject);
+  const counts = {
+    events: rollCount(MAX_EVENTS, options.eventChance, random),
+    projects: rollCount(MAX_PROJECTS, options.projectChance, random)
+  };
 
-  if (desiredCount === 0 || eventPool.length === 0) {
-    return [];
+  while (counts.events + counts.projects > MAX_EVENTS_AND_PROJECTS) {
+    const availableTypes = [
+      ...(counts.events > 0 ? ['events' as const] : []),
+      ...(counts.projects > 0 ? ['projects' as const] : [])
+    ];
+    const typeToTrim = availableTypes[Math.floor(random() * availableTypes.length)];
+    counts[typeToTrim] -= 1;
   }
 
-  return drawUnique(eventPool, Math.min(desiredCount, MAX_EVENTS, eventPool.length), random);
+  return {
+    events: drawUnique(eventPool, Math.min(counts.events, eventPool.length), random),
+    projects: drawUnique(projectPool, Math.min(counts.projects, projectPool.length), random)
+  };
+}
+
+function rollCount(maxCount: number, chance: number, random: RandomSource): number {
+  return Array.from({ length: maxCount }).filter(() => rollPercent(chance, random)).length;
+}
+
+function isProject(card: DominionCard): boolean {
+  return card.section === 'Project' || card.section === 'Projects';
 }
 
 function chooseProphecyIfNeeded(

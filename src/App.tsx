@@ -34,12 +34,13 @@ function App() {
   });
   const [bigMoneyChance, setBigMoneyChance] = useState(30);
   const [eventChance, setEventChance] = useState(35);
+  const [projectChance, setProjectChance] = useState(35);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RandomizedKingdom | null>(null);
 
   const options = useMemo(
-    () => ({ selectedExpansions, bigMoneyChance, eventChance }),
-    [selectedExpansions, bigMoneyChance, eventChance]
+    () => ({ selectedExpansions, bigMoneyChance, eventChance, projectChance }),
+    [selectedExpansions, bigMoneyChance, eventChance, projectChance]
   );
 
   useEffect(() => {
@@ -99,8 +100,10 @@ function App() {
           <ChanceControls
             bigMoneyChance={bigMoneyChance}
             eventChance={eventChance}
+            projectChance={projectChance}
             onBigMoneyChanceChange={setBigMoneyChance}
             onEventChanceChange={setEventChance}
+            onProjectChanceChange={setProjectChance}
           />
           <button className="secondary-button" type="button" onClick={generateKingdom}>
             <RefreshCw size={17} aria-hidden="true" />
