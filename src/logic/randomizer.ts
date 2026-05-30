@@ -88,6 +88,81 @@ export function rerollKingdomCard(
   };
 }
 
+export function rerollEvent(
+  cards: DominionCard[],
+  current: RandomizedKingdom,
+  cardName: string,
+  options: RandomizerOptions,
+  random: RandomSource = Math.random
+): RandomizedKingdom {
+  const eligibleCards = filterCardsByExpansions(cards, options.selectedExpansions);
+  const events = rerollFromPool(
+    current.events,
+    cardName,
+    eligibleCards.filter((card) => card.section === 'Event'),
+    random
+  );
+
+  if (events === current.events) {
+    return current;
+  }
+
+  return {
+    ...current,
+    events,
+    setupRequirements: determineSetupRequirements({ ...current, events })
+  };
+}
+
+export function rerollProject(
+  cards: DominionCard[],
+  current: RandomizedKingdom,
+  cardName: string,
+  options: RandomizerOptions,
+  random: RandomSource = Math.random
+): RandomizedKingdom {
+  const eligibleCards = filterCardsByExpansions(cards, options.selectedExpansions);
+  const projects = rerollFromPool(current.projects, cardName, eligibleCards.filter(isProject), random);
+
+  if (projects === current.projects) {
+    return current;
+  }
+
+  return {
+    ...current,
+    projects,
+    setupRequirements: determineSetupRequirements({ ...current, projects })
+  };
+}
+
+export function rerollProphecy(
+  cards: DominionCard[],
+  current: RandomizedKingdom,
+  options: RandomizerOptions,
+  random: RandomSource = Math.random
+): RandomizedKingdom {
+  if (!current.prophecy) {
+    return current;
+  }
+
+  const eligibleCards = filterCardsByExpansions(cards, options.selectedExpansions);
+  const replacementPool = eligibleCards.filter(
+    (card) => card.section === 'Prophecy' && card.name !== current.prophecy?.name
+  );
+
+  if (replacementPool.length === 0) {
+    return current;
+  }
+
+  const prophecy = drawUnique(replacementPool, 1, random)[0];
+
+  return {
+    ...current,
+    prophecy,
+    setupRequirements: determineSetupRequirements({ ...current, prophecy })
+  };
+}
+
 export function determineSetupRequirements(result: Omit<RandomizedKingdom, 'setupRequirements'>): string[] {
   const requirements = new Set<string>();
 
@@ -152,6 +227,25 @@ function rollCount(maxCount: number, chance: number, random: RandomSource): numb
 
 function isProject(card: DominionCard): boolean {
   return card.section === 'Project' || card.section === 'Projects';
+}
+
+function rerollFromPool(
+  currentCards: DominionCard[],
+  cardName: string,
+  pool: DominionCard[],
+  random: RandomSource
+): DominionCard[] {
+  const currentNames = new Set(currentCards.map((card) => card.name));
+  currentNames.delete(cardName);
+
+  const replacementPool = pool.filter((card) => !currentNames.has(card.name) && card.name !== cardName);
+
+  if (replacementPool.length === 0) {
+    return currentCards;
+  }
+
+  const replacement = drawUnique(replacementPool, 1, random)[0];
+  return currentCards.map((card) => (card.name === cardName ? replacement : card));
 }
 
 function chooseProphecyIfNeeded(

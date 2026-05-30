@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { randomizeKingdom, rerollKingdomCard } from './randomizer';
+import { randomizeKingdom, rerollEvent, rerollKingdomCard, rerollProject, rerollProphecy } from './randomizer';
 import type { DominionCard } from '../types/cards';
 
 const kingdomCards: DominionCard[] = Array.from({ length: 12 }, (_, index) => ({
@@ -31,7 +31,8 @@ const cards: DominionCard[] = [
   { set: 'Base', edition: 'test', section: 'Projects', name: 'City Gate', coin_cost: 3, debt_cost: null, types: ['Projects'] },
   { set: 'Base', edition: 'test', section: 'Projects', name: 'Pageant', coin_cost: 3, debt_cost: null, types: ['Projects'] },
   { set: 'Base', edition: 'test', section: 'Projects', name: 'Fair', coin_cost: 4, debt_cost: null, types: ['Projects'] },
-  { set: 'Base', edition: 'test', section: 'Prophecy', name: 'Good Times', coin_cost: null, debt_cost: null, types: ['Prophecy'] }
+  { set: 'Base', edition: 'test', section: 'Prophecy', name: 'Good Times', coin_cost: null, debt_cost: null, types: ['Prophecy'] },
+  { set: 'Base', edition: 'test', section: 'Prophecy', name: 'Hard Times', coin_cost: null, debt_cost: null, types: ['Prophecy'] }
 ];
 
 describe('randomizeKingdom', () => {
@@ -72,8 +73,8 @@ describe('randomizeKingdom', () => {
     );
 
     expect(result.kingdomCards.some((card) => card.types.includes('Omen'))).toBe(true);
-    expect(result.prophecy?.name).toBe('Good Times');
-    expect(result.setupRequirements).toContain('Use Prophecy: Good Times');
+    expect(result.prophecy?.name).toBe('Hard Times');
+    expect(result.setupRequirements).toContain('Use Prophecy: Hard Times');
   });
 
   it('rerolls one kingdom card without duplicating the existing kingdom', () => {
@@ -92,5 +93,35 @@ describe('randomizeKingdom', () => {
     expect(rerolled.kingdomCards).toHaveLength(10);
     expect(new Set(rerolled.kingdomCards.map((card) => card.name)).size).toBe(10);
     expect(rerolled.kingdomCards.map((card) => card.name)).not.toContain(result.kingdomCards[0].name);
+  });
+
+  it('rerolls events, projects, and prophecy from their own pools', () => {
+    const result = randomizeKingdom(
+      cards,
+      { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 100, projectChance: 100 },
+      () => 0
+    );
+    const options = { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 100, projectChance: 100 };
+
+    const eventReroll = rerollEvent(cards, result, result.events[0].name, options, () => 0.99);
+    expect(eventReroll.events).toHaveLength(result.events.length);
+    expect(new Set(eventReroll.events.map((card) => card.name)).size).toBe(result.events.length);
+    expect(eventReroll.events.map((card) => card.name)).not.toContain(result.events[0].name);
+    expect(eventReroll.events.every((card) => card.section === 'Event')).toBe(true);
+
+    const projectReroll = rerollProject(cards, result, result.projects[0].name, options, () => 0.99);
+    expect(projectReroll.projects).toHaveLength(result.projects.length);
+    expect(new Set(projectReroll.projects.map((card) => card.name)).size).toBe(result.projects.length);
+    expect(projectReroll.projects.map((card) => card.name)).not.toContain(result.projects[0].name);
+    expect(projectReroll.projects.every((card) => card.section === 'Projects')).toBe(true);
+
+    const prophecyReroll = rerollProphecy(
+      cards,
+      { ...result, prophecy: cards.find((card) => card.name === 'Good Times') ?? null },
+      options,
+      () => 0
+    );
+    expect(prophecyReroll.prophecy?.name).toBe('Hard Times');
+    expect(prophecyReroll.setupRequirements).toContain('Use Prophecy: Hard Times');
   });
 });

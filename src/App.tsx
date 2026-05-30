@@ -9,7 +9,10 @@ import { SetupPanel } from './components/SetupPanel';
 import {
   getAvailableExpansions,
   randomizeKingdom,
-  rerollKingdomCard
+  rerollEvent,
+  rerollKingdomCard,
+  rerollProject,
+  rerollProphecy
 } from './logic/randomizer';
 import type { DominionCard, Expansion, RandomizedKingdom } from './types/cards';
 
@@ -77,6 +80,45 @@ function App() {
     }
   }
 
+  function handleRerollEvent(cardName: string) {
+    if (!result) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setResult(rerollEvent(cards, result, cardName, options));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to reroll that event.');
+    }
+  }
+
+  function handleRerollProject(cardName: string) {
+    if (!result) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setResult(rerollProject(cards, result, cardName, options));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to reroll that project.');
+    }
+  }
+
+  function handleRerollProphecy() {
+    if (!result) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setResult(rerollProphecy(cards, result, options));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to reroll that prophecy.');
+    }
+  }
+
   return (
     <main className="app-shell">
       <header className="app-header">
@@ -117,7 +159,12 @@ function App() {
             <>
               <CardGrid cards={result.kingdomCards} onRerollCard={handleRerollCard} />
               <div className="details-grid">
-                <ExtrasPanel result={result} />
+                <ExtrasPanel
+                  result={result}
+                  onRerollEvent={handleRerollEvent}
+                  onRerollProject={handleRerollProject}
+                  onRerollProphecy={handleRerollProphecy}
+                />
                 <SetupPanel requirements={result.setupRequirements} />
               </div>
             </>

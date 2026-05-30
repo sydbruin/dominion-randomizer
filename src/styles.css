@@ -253,11 +253,19 @@ input {
 }
 
 .extra-item {
-  display: grid;
-  gap: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   padding: 10px;
   border-radius: 7px;
   background: #f6f0e5;
+}
+
+.extra-item > div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
 }
 
 .extra-item span {
@@ -265,6 +273,10 @@ input {
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.extra-item strong {
+  overflow-wrap: anywhere;
 }
 
 .setup-list {
