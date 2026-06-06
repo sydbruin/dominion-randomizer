@@ -114,7 +114,7 @@
   {"set":"Rising Sun","edition":"1st","section":"Kingdom","name":"Snake Witch","coin_cost":2,"debt_cost":0,"types":["Action","Attack"], "setup":["Curse"]},
   {"set":"Rising Sun","edition":"1st","section":"Kingdom","name":"Aristocrat","coin_cost":3,"debt_cost":0,"types":["Action"], "setup":["None"]},
   {"set":"Rising Sun","edition":"1st","section":"Kingdom","name":"Craftsman","coin_cost":3,"debt_cost":0,"types":["Action"], "setup":["Debt"]},
-  {"set":"Rising Sun","edition":"1st","section":"Kingdom","name":"Riverboat","coin_cost":3,"debt_cost":0,"types":["Action","Duration"], "setup":["Riverboat"]},
+  {"set":"Rising Sun","edition":"1st","section":"Kingdom","name":"Riverboat","coin_cost":3,"debt_cost":0,"types":["Action","Duration"], "setup":["None"]},
   {"set":"Rising Sun","edition":"1st","section":"Kingdom","name":"Root Cellar","coin_cost":3,"debt_cost":0,"types":["Action"], "setup":["Debt"]},
   {"set":"Rising Sun","edition":"1st","section":"Kingdom","name":"Alley","coin_cost":4,"debt_cost":0,"types":["Action","Shadow"], "setup":["None"]},
   {"set":"Rising Sun","edition":"1st","section":"Kingdom","name":"Change","coin_cost":4,"debt_cost":0,"types":["Action"], "setup":["None"]},

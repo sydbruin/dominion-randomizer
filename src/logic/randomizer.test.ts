@@ -39,8 +39,7 @@ describe('randomizeKingdom', () => {
   it('draws 10 unique kingdom cards from selected expansions', () => {
     const result = randomizeKingdom(
       cards,
-      { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 0, projectChance: 0 },
-      () => 0
+      { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 0, projectChance: 0 },      undefined,      () => 0
     );
 
     expect(result.kingdomCards).toHaveLength(10);
@@ -54,14 +53,15 @@ describe('randomizeKingdom', () => {
     const result = randomizeKingdom(
       cards,
       { selectedExpansions: ['Base'], bigMoneyChance: 100, eventChance: 100, projectChance: 100 },
+      undefined,
       () => 0
     );
 
     expect(result.events.length).toBeLessThanOrEqual(2);
     expect(result.projects.length).toBeLessThanOrEqual(2);
     expect(result.events.length + result.projects.length).toBe(3);
-    expect(result.useColonies).toBe(true);
-    expect(result.setupRequirements).toContain('Use Platinum and Colony');
+    expect(result.useColonies).toBe(false);
+    expect(result.setupRequirements).not.toContain('Use Platinum and Colony');
     expect(result.setupRequirements).toContain('Use selected Project cards');
   });
 
@@ -69,6 +69,7 @@ describe('randomizeKingdom', () => {
     const result = randomizeKingdom(
       cards,
       { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 0, projectChance: 0 },
+      undefined,
       () => 0.99
     );
 
@@ -81,6 +82,7 @@ describe('randomizeKingdom', () => {
     const result = randomizeKingdom(
       cards,
       { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 0, projectChance: 0 },
+      undefined,
       () => 0
     );
     const rerolled = rerollKingdomCard(cards, result, result.kingdomCards[0].name, {
@@ -99,6 +101,7 @@ describe('randomizeKingdom', () => {
     const result = randomizeKingdom(
       cards,
       { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 100, projectChance: 100 },
+      undefined,
       () => 0
     );
     const options = { selectedExpansions: ['Base'], bigMoneyChance: 0, eventChance: 100, projectChance: 100 };

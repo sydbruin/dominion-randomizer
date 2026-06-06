@@ -27,6 +27,7 @@ export function filterCardsByExpansions(cards: DominionCard[], expansions: Expan
 export function randomizeKingdom(
   cards: DominionCard[],
   options: RandomizerOptions,
+  history?: Record<string, number>,
   random: RandomSource = Math.random
 ): RandomizedKingdom {
   const eligibleCards = filterCardsByExpansions(cards, options.selectedExpansions);
@@ -36,10 +37,26 @@ export function randomizeKingdom(
     throw new Error(`At least ${KINGDOM_SIZE} Kingdom cards are required for the selected expansions.`);
   }
 
-  const kingdomCards = drawUnique(kingdomPool, KINGDOM_SIZE, random);
-  const { events, projects } = chooseEventsAndProjects(eligibleCards, options, random);
-  const prophecy = chooseProphecyIfNeeded(eligibleCards, kingdomCards, random);
-  const useColonies = rollPercent(options.bigMoneyChance, random);
+  const getWeight = (name: string) => {
+    const count = history?.[name] ?? 0;
+    if (count >= 3) {
+      return 0.1;
+    }
+    if (count === 2) {
+      return 0.2;
+    }
+    if (count === 1) {
+      return 0.4;
+    }
+    return 1;
+  };
+
+  const kingdomCards = drawUnique(kingdomPool, KINGDOM_SIZE, random, (card) => getWeight(card.name));
+  const { events, projects } = chooseEventsAndProjects(eligibleCards, options, random, history);
+  const prophecy = chooseProphecyIfNeeded(eligibleCards, kingdomCards, random, history);
+  const useColonies = options.selectedExpansions.includes('Prosperity')
+    ? rollPercent(options.bigMoneyChance, random)
+    : false;
 
   return {
     kingdomCards,
@@ -47,7 +64,7 @@ export function randomizeKingdom(
     projects,
     prophecy,
     useColonies,
-    setupRequirements: determineSetupRequirements({ kingdomCards, events, projects, prophecy, useColonies })
+    setupRequirements: determineSetupRequirements({ kingdomCards, events, projects, prophecy, useColonies }, eligibleCards, random)
   };
 }
 
@@ -84,7 +101,7 @@ export function rerollKingdomCard(
       projects: current.projects,
       prophecy,
       useColonies: current.useColonies
-    })
+    }, eligibleCards, random)
   };
 }
 
@@ -110,7 +127,7 @@ export function rerollEvent(
   return {
     ...current,
     events,
-    setupRequirements: determineSetupRequirements({ ...current, events })
+    setupRequirements: determineSetupRequirements({ ...current, events }, eligibleCards, random)
   };
 }
 
@@ -131,7 +148,7 @@ export function rerollProject(
   return {
     ...current,
     projects,
-    setupRequirements: determineSetupRequirements({ ...current, projects })
+    setupRequirements: determineSetupRequirements({ ...current, projects }, eligibleCards, random)
   };
 }
 
@@ -159,18 +176,31 @@ export function rerollProphecy(
   return {
     ...current,
     prophecy,
-    setupRequirements: determineSetupRequirements({ ...current, prophecy })
+    setupRequirements: determineSetupRequirements({ ...current, prophecy }, eligibleCards, random)
   };
 }
 
-export function determineSetupRequirements(result: Omit<RandomizedKingdom, 'setupRequirements'>): string[] {
+export function determineSetupRequirements(
+  result: Omit<RandomizedKingdom, 'setupRequirements'>,
+  eligibleCards: DominionCard[],
+  random: RandomSource = Math.random
+): string[] {
   const requirements = new Set<string>();
 
   for (const card of result.kingdomCards) {
     for (const setup of card.setup ?? []) {
-      if (setup && setup.toLowerCase() !== 'none') {
+      if (setup && setup.toLowerCase() !== 'none' && setup !== 'Riverboat') {
         requirements.add(normalizeSetupLabel(setup));
       }
+    }
+  }
+
+  // Handle Riverboat special case
+  const hasRiverboat = result.kingdomCards.some((card) => card.name === 'Riverboat');
+  if (hasRiverboat) {
+    const riverboatCard = chooseRiverboadCard(result.kingdomCards, eligibleCards, random);
+    if (riverboatCard) {
+      requirements.add(`Riverboat: Use ${riverboatCard.name} (5-cost card)`);
     }
   }
 
@@ -194,10 +224,29 @@ export function determineSetupRequirements(result: Omit<RandomizedKingdom, 'setu
   return Array.from(requirements).sort();
 }
 
+function chooseRiverboadCard(
+  kingdomCards: DominionCard[],
+  eligibleCards: DominionCard[],
+  random: RandomSource
+): DominionCard | null {
+  const kingdomNames = new Set(kingdomCards.map((card) => card.name));
+  const fiveCostCards = eligibleCards.filter(
+    (card) => card.section === 'Kingdom' && card.coin_cost === 5 && !kingdomNames.has(card.name)
+  );
+
+  if (fiveCostCards.length === 0) {
+    return null;
+  }
+
+  const selectedIndex = Math.floor(random() * fiveCostCards.length);
+  return fiveCostCards[selectedIndex];
+}
+
 function chooseEventsAndProjects(
   cards: DominionCard[],
   options: RandomizerOptions,
-  random: RandomSource
+  random: RandomSource,
+  history?: Record<string, number>
 ): Pick<RandomizedKingdom, 'events' | 'projects'> {
   const eventPool = cards.filter((card) => card.section === 'Event');
   const projectPool = cards.filter(isProject);
@@ -215,9 +264,23 @@ function chooseEventsAndProjects(
     counts[typeToTrim] -= 1;
   }
 
+  const getWeight = (name: string) => {
+    const count = history?.[name] ?? 0;
+    if (count >= 3) {
+      return 0.1;
+    }
+    if (count === 2) {
+      return 0.2;
+    }
+    if (count === 1) {
+      return 0.4;
+    }
+    return 1;
+  };
+
   return {
-    events: drawUnique(eventPool, Math.min(counts.events, eventPool.length), random),
-    projects: drawUnique(projectPool, Math.min(counts.projects, projectPool.length), random)
+    events: drawUnique(eventPool, Math.min(counts.events, eventPool.length), random, (card) => getWeight(card.name)),
+    projects: drawUnique(projectPool, Math.min(counts.projects, projectPool.length), random, (card) => getWeight(card.name))
   };
 }
 
@@ -251,14 +314,31 @@ function rerollFromPool(
 function chooseProphecyIfNeeded(
   cards: DominionCard[],
   kingdomCards: DominionCard[],
-  random: RandomSource
+  random: RandomSource,
+  history?: Record<string, number>
 ): DominionCard | null {
   if (!kingdomCards.some((card) => card.types.includes('Omen'))) {
     return null;
   }
 
   const prophecyPool = cards.filter((card) => card.section === 'Prophecy');
-  return prophecyPool.length > 0 ? drawUnique(prophecyPool, 1, random)[0] : null;
+  const getWeight = (name: string) => {
+    const count = history?.[name] ?? 0;
+    if (count >= 3) {
+      return 0.1;
+    }
+    if (count === 2) {
+      return 0.2;
+    }
+    if (count === 1) {
+      return 0.4;
+    }
+    return 1;
+  };
+
+  return prophecyPool.length > 0
+    ? drawUnique(prophecyPool, 1, random, (card) => getWeight(card.name))[0]
+    : null;
 }
 
 function chooseProphecyAfterReroll(
@@ -280,13 +360,43 @@ function chooseProphecyAfterReroll(
   return chooseProphecyIfNeeded(cards, kingdomCards, random);
 }
 
-function drawUnique<T>(items: T[], count: number, random: RandomSource): T[] {
+function drawUnique<T>(
+  items: T[],
+  count: number,
+  random: RandomSource,
+  weightFn?: (item: T) => number
+): T[] {
   const pool = [...items];
   const drawn: T[] = [];
 
   while (drawn.length < count && pool.length > 0) {
-    const index = Math.floor(random() * pool.length);
-    drawn.push(pool.splice(index, 1)[0]);
+    if (!weightFn) {
+      const index = Math.floor(random() * pool.length);
+      drawn.push(pool.splice(index, 1)[0]);
+      continue;
+    }
+
+    const weights = pool.map((item) => Math.max(weightFn(item), 0));
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+
+    if (totalWeight <= 0) {
+      const index = Math.floor(random() * pool.length);
+      drawn.push(pool.splice(index, 1)[0]);
+      continue;
+    }
+
+    let threshold = random() * totalWeight;
+    let chosenIndex = 0;
+
+    for (let i = 0; i < pool.length; i += 1) {
+      threshold -= weights[i];
+      if (threshold < 0) {
+        chosenIndex = i;
+        break;
+      }
+    }
+
+    drawn.push(pool.splice(chosenIndex, 1)[0]);
   }
 
   return drawn;

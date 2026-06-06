@@ -40,6 +40,7 @@ function App() {
   const [projectChance, setProjectChance] = useState(35);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RandomizedKingdom | null>(null);
+  const [chosenCards, setChosenCards] = useState<Record<string, number>>({});
 
   const options = useMemo(
     () => ({ selectedExpansions, bigMoneyChance, eventChance, projectChance }),
@@ -51,16 +52,48 @@ function App() {
   }, [selectedExpansions]);
 
   useEffect(() => {
-    generateKingdom();
+    handleNewGameDay();
   }, []);
 
-  function generateKingdom() {
+  function generateKingdom(history?: Record<string, number>) {
     try {
       setError(null);
-      setResult(randomizeKingdom(cards, options));
+      setResult(randomizeKingdom(cards, options, history));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to generate a Kingdom.');
     }
+  }
+
+  function getResultNames(result: RandomizedKingdom) {
+    const names = new Set<string>();
+
+    result.kingdomCards.forEach((card) => names.add(card.name));
+    result.events.forEach((card) => names.add(card.name));
+    result.projects.forEach((card) => names.add(card.name));
+    if (result.prophecy) {
+      names.add(result.prophecy.name);
+    }
+
+    return Array.from(names);
+  }
+
+  function handleNewGameDay() {
+    setChosenCards({});
+    generateKingdom();
+  }
+
+  function handleRerollKingdomSet() {
+    if (!result) {
+      return;
+    }
+
+    const nextHistory = { ...chosenCards };
+    getResultNames(result).forEach((name) => {
+      nextHistory[name] = (nextHistory[name] ?? 0) + 1;
+    });
+
+    setChosenCards(nextHistory);
+    generateKingdom(nextHistory);
   }
 
   function handleSelectedExpansionsChange(expansions: Expansion[]) {
@@ -126,9 +159,9 @@ function App() {
           <p>Dominion</p>
           <h1>Kingdom Randomizer</h1>
         </div>
-        <button className="primary-button" type="button" onClick={generateKingdom}>
+        <button className="primary-button" type="button" onClick={handleNewGameDay}>
           <Dices size={18} aria-hidden="true" />
-          Generate
+          New Game Day
         </button>
       </header>
 
@@ -147,7 +180,7 @@ function App() {
             onEventChanceChange={setEventChance}
             onProjectChanceChange={setProjectChance}
           />
-          <button className="secondary-button" type="button" onClick={generateKingdom}>
+          <button className="secondary-button" type="button" onClick={handleRerollKingdomSet}>
             <RefreshCw size={17} aria-hidden="true" />
             Reroll Kingdom
           </button>
